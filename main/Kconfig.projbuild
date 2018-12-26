@@ -1,0 +1,19 @@
+menu "Module Configuration"
+
+config NUM_LED
+    int "Led Number"
+	help
+		Number of LEDs associated to the module.
+
+config LIGHT_ID
+    int "Light ID"
+  help
+    ID of the light associated to this module.
+
+config WIFI_SSID
+    string "WiFi SSID"
+
+config WIFI_PASS
+    string "WiFi PASS"
+
+endmenu
