@@ -9,6 +9,7 @@ extern "C" {
 
 static WS2812 strip = WS2812((gpio_num_t) LED_PIN, NUM_LED, RMT_CHANNEL_0);
 static pixel_t last_color = { };
+static bool on;
 
 void blink_task(void *delay_ms)
 {
@@ -42,10 +43,12 @@ void handle_color_changed(size_t payload_length, char* payload) {
     last_color.green = (int_color >> 8) & 0xff;
     last_color.blue = int_color & 0xff;
     ESP_LOGI(MAIN_TAG, "Set color : %i, %i, %i", last_color.red, last_color.green, last_color.blue);
-    for (int i = 0; i < NUM_LED; i++) {
-      strip.setPixel(i, last_color);
+    if (on) {
+      for (int i = 0; i < NUM_LED; i++) {
+        strip.setPixel(i, last_color);
+      }
+      strip.show();
     }
-    strip.show();
 }
 
 void handle_switch(size_t payload_length, char* payload) {
@@ -56,6 +59,7 @@ void handle_switch(size_t payload_length, char* payload) {
     switch_str[payload_length] = '\0';
     if (strcmp(switch_str, "ON") == 0) {
       ESP_LOGI(MAIN_TAG, "Switch On");
+      on = true;
       for (int i = 0; i < NUM_LED; i++) {
         strip.setPixel(i, last_color);
       }
@@ -63,6 +67,7 @@ void handle_switch(size_t payload_length, char* payload) {
     }
     else {
       ESP_LOGI(MAIN_TAG, "Switch Off");
+      on = false;
       for (int i = 0; i < NUM_LED; i++) {
         strip.setPixel(i, 0, 0, 0);
       }

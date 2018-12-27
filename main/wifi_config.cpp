@@ -16,6 +16,7 @@ static esp_err_t wifi_event_handler(void *blinkLedTaskHandler, system_event_t *e
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         vTaskDelete((TaskHandle_t) blinkLedTaskHandler);
+        gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
         ESP_LOGI(MAIN_TAG, "Connect to MQTT");
         mqtt_app_start();
         break;
