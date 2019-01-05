@@ -16,4 +16,11 @@ config WIFI_SSID
 config WIFI_PASS
     string "WiFi PASS"
 
+config MQTT_BROKER_URI
+    string "Broker Uri"
+  help
+    The URI of your TCP mqtt broker.
+    Check https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/mqtt.html#uri
+    to see how it should be specified.
+
 endmenu

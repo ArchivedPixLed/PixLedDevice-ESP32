@@ -2,6 +2,7 @@
 #define LED_PIN 12
 #define NUM_LED CONFIG_NUM_LED
 #define LIGHT_ID CONFIG_LIGHT_ID
+#define MQTT_BROKER_URI CONFIG_MQTT_BROKER_URI
 
 #include <stdio.h>
 #include <string.h>
