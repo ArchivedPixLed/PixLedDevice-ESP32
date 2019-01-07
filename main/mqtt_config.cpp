@@ -10,24 +10,22 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
   switch (event->event_id) {
       case MQTT_EVENT_CONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
-
-          // msg_id = esp_mqtt_client_subscribe(client, color_topic, 1);
-          // ESP_LOGI(MQTT_TAG, "Color topic subscribe. msg_id=%d", msg_id);
-
-          // msg_id = esp_mqtt_client_subscribe(client, switch_topic, 1);
-          // ESP_LOGI(MQTT_TAG, "Switch topic subscribe. msg_id=%d", msg_id);
-          //
-          // // Tell the broker that this light is connected.
-          // // The Android App should subscribe directly to this topic.
-          // esp_mqtt_client_publish(client, connection_topic, "connected", 0, 1, 1);
-          //
-          // // Stop blink
-          // vTaskDelete((TaskHandle_t)(event->user_context));
-          // gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
           context->connected=true;
+          // Publish light_id to /connected topic
+          esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
+
+          // (Re)initialize subscribtions
+          context->subscribed_to_switch_topic=false;
+          context->subscribed_to_color_topic=false;
+
+          // Firstly, connect to switch topic, and wait for the first switch initialization message.
+          // -> go to MQTT_EVENT_DATA
+          ESP_LOGI(MQTT_TAG, "Subscribing to switch topic...");
+          esp_mqtt_client_subscribe(client, switch_topic, 1);
           break;
       case MQTT_EVENT_DISCONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
+          context->connected=false;
           break;
 
       case MQTT_EVENT_SUBSCRIBED:
@@ -61,21 +59,29 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
           }
 
+
+          else if (strcmp(topic_str, switch_topic) == 0) {
+            handle_switch(event->data_len, event->data);
+            ESP_LOGI(MQTT_TAG, "subscribed_to_switch_topic : %s", context->subscribed_to_switch_topic ? "true" : "false");
+            if(!context->subscribed_to_switch_topic) {
+              // subscribed_to_switch_topic was false, so this is the initialization message.
+              context->subscribed_to_switch_topic=true;
+
+              // Then, we connect to color_topic
+              ESP_LOGI(MQTT_TAG, "Subscribing to color topic...");
+              esp_mqtt_client_subscribe(client, color_topic, 1);
+            }
+          }
+
           else if (strcmp(topic_str, color_topic) == 0) {
             handle_color_changed(event->data_len, event->data);
             if(!context->subscribed_to_color_topic){
+              // subscribed_to_color_topic was false, so this is the initialization message.
               context->subscribed_to_color_topic=true;
+              ESP_LOGI(MQTT_TAG, "Initialization complete!");
+              esp_mqtt_client_subscribe(client, check_topic, 1);
             }
           }
-
-          else if (strcmp(topic_str, switch_topic) == 0) {
-            if(!context->subscribed_to_switch_topic) {
-              context->subscribed_to_switch_topic=true;
-            }
-            handle_switch(event->data_len, event->data);
-          }
-
-          else
 
           break;
 
@@ -91,13 +97,14 @@ void mqtt_app_start()
   sprintf(client_id, "light_%i", LIGHT_ID);
   sprintf(color_topic, "/buildings/-1/rooms/-10/lights/%i/color", LIGHT_ID);
   sprintf(switch_topic, "/buildings/-1/rooms/-10/lights/%i/switch", LIGHT_ID);
-  // sprintf(connection_topic, "/buildings/-1/rooms/-10/lights/%i/connection", LIGHT_ID);
 
   // Blink on board led
   uint32_t delay_ms = 300;
   TaskHandle_t blinkLedTaskHandler;
   xTaskCreate(&blink_task, "blink_connect_mqtt", configMINIMAL_STACK_SIZE, (void*)&delay_ms, 5, &blinkLedTaskHandler);
   vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+  ESP_LOGI(MQTT_TAG, "Connecting to broker...");
 
   // Context initialization
   struct mqtt_context context {false, false, false};
@@ -119,25 +126,6 @@ void mqtt_app_start()
   esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
   esp_mqtt_client_start(client);
 
-  ESP_LOGI(MQTT_TAG, "Connecting to broker...");
-  while(!context.connected) {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-  esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
-
-  ESP_LOGI(MQTT_TAG, "Subscribing to switch topic...");
-  esp_mqtt_client_subscribe(client, switch_topic, 1);
-  while(!context.subscribed_to_switch_topic) {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-
-  ESP_LOGI(MQTT_TAG, "Subscribing to color topic...");
-  esp_mqtt_client_subscribe(client, color_topic, 1);
-  while(!context.subscribed_to_color_topic) {
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-  }
-  esp_mqtt_client_subscribe(client, check_topic, 1);
-  ESP_LOGI(MQTT_TAG, "MQTT initialization done!");
 
   vTaskDelete(blinkLedTaskHandler);
   gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
