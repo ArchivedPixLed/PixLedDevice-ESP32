@@ -39,20 +39,39 @@ static esp_err_t wifi_event_handler(void *blinkLedTaskHandler, system_event_t *e
 
 void wifi_init_sta()
 {
+    /* BLINK LED */
     uint32_t delay_ms = 100;
     TaskHandle_t blinkLedTaskHandler;
     xTaskCreate(&blink_task, "blink_connect_wifi", configMINIMAL_STACK_SIZE, (void*)&delay_ms, 5, &blinkLedTaskHandler);
     s_wifi_event_group = xEventGroupCreate();
 
+    /* Start WiFI events handler */
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, (void*)blinkLedTaskHandler));
-    //ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
 
+    /* Retrieves connection info from nvs */
+    nvs_handle nvs_config_handle;
+    ESP_ERROR_CHECK(nvs_open("conf", NVS_READONLY, &nvs_config_handle));
+
+    // SSID
+    size_t ssid_length;
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", NULL, &ssid_length));
+    char* ssid = (char*) malloc(ssid_length);
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", ssid, &ssid_length));
+
+    // PASSWORD
+    size_t pw_length;
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_pw", NULL, &pw_length));
+    char* pw = (char*) malloc(ssid_length);
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_pw", pw, &pw_length));
+    nvs_close(nvs_config_handle);
+    
+    /* Connect to WiFi */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = { };
-    strcpy((char*) wifi_config.sta.ssid, WIFI_SSID);
-    strcpy((char*) wifi_config.sta.password, WIFI_PASS);
+    strcpy((char*) wifi_config.sta.ssid, ssid);
+    strcpy((char*) wifi_config.sta.password, pw);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
@@ -60,5 +79,5 @@ void wifi_init_sta()
 
     ESP_LOGI(WIFI_TAG, "wifi_init_sta finished.");
     ESP_LOGI(WIFI_TAG, "connect to ap SSID:%s password:%s",
-             WIFI_SSID, WIFI_PASS);
+             ssid, pw);
 }

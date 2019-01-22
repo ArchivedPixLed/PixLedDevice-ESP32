@@ -1,3 +1,4 @@
+#include "esp_err.h"
 #include "main.h"
 
 #include "mqtt_config.h"
@@ -88,12 +89,21 @@ void app_main()
     strip.show();
 
     ESP_LOGI(MAIN_TAG, "Init nvs");
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
+      err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK(err);
+    nvs_handle nvs_config_handle;
+    ESP_ERROR_CHECK(nvs_open("conf", NVS_READWRITE, &nvs_config_handle));
+    ESP_ERROR_CHECK(nvs_erase_all(nvs_config_handle));
+
+    ESP_ERROR_CHECK(nvs_set_str(nvs_config_handle, "wifi_ssid", WIFI_SSID));
+    ESP_ERROR_CHECK(nvs_set_str(nvs_config_handle, "wifi_pw", WIFI_PASS));
+    ESP_ERROR_CHECK(nvs_commit(nvs_config_handle));
+    nvs_close(nvs_config_handle);
+    ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", WIFI_SSID, WIFI_PASS);
 
     ESP_LOGI(MAIN_TAG, "Init WiFi");
     wifi_init_sta();
