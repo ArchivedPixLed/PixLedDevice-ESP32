@@ -106,5 +106,5 @@ void app_main()
     ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", WIFI_SSID, WIFI_PASS);
 
     ESP_LOGI(MAIN_TAG, "Init WiFi");
-    wifi_init_sta();
+    wifi_init_sta(WIFI_SSID, WIFI_PASS, MAIN_WIFI_EVENT_HANDLER);
 }
