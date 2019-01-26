@@ -3,6 +3,7 @@
 
 #include "mqtt_config.h"
 #include "wifi_config.h"
+#include "uart_config.h"
 
 extern "C" {
   void app_main();
@@ -95,16 +96,18 @@ void app_main()
       err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-    nvs_handle nvs_config_handle;
-    ESP_ERROR_CHECK(nvs_open("conf", NVS_READWRITE, &nvs_config_handle));
-    ESP_ERROR_CHECK(nvs_erase_all(nvs_config_handle));
 
-    ESP_ERROR_CHECK(nvs_set_str(nvs_config_handle, "wifi_ssid", WIFI_SSID));
-    ESP_ERROR_CHECK(nvs_set_str(nvs_config_handle, "wifi_pw", WIFI_PASS));
-    ESP_ERROR_CHECK(nvs_commit(nvs_config_handle));
-    nvs_close(nvs_config_handle);
-    ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", WIFI_SSID, WIFI_PASS);
+    save_wifi_info_to_nvs(WIFI_SSID, WIFI_PASS);
 
-    ESP_LOGI(MAIN_TAG, "Init WiFi");
-    wifi_init_sta(WIFI_SSID, WIFI_PASS, MAIN_WIFI_EVENT_HANDLER);
+    char* ssid;
+    char* password;
+    load_wifi_config_from_nvs(&ssid, &password);
+    ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", ssid, password);
+
+    initialize_uart();
+
+    // ESP_LOGI(MAIN_TAG, "Init WiFi");
+    // wifi_init_sta(ssid, password, MAIN_WIFI_EVENT_HANDLER);
+    free(ssid);
+    free(password);
 }
