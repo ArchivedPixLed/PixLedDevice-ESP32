@@ -2,4 +2,3 @@ build
 sdkconfig
 sdkconfig.defaults
 sdkconfig.old
-components
