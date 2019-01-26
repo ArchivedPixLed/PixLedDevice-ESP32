@@ -23,6 +23,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
           ESP_LOGI(MQTT_TAG, "Subscribing to switch topic...");
           esp_mqtt_client_subscribe(client, switch_topic, 1);
           break;
+      case MQTT_EVENT_BEFORE_CONNECT:
+          break;
+          
       case MQTT_EVENT_DISCONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
           context->connected=false;
