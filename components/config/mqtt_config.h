@@ -1,8 +1,12 @@
 #define MQTT_BROKER_URI CONFIG_MQTT_BROKER_URI
+#define MAIN_MQTT_EVENT_HANDLER main_mqtt_event_handler
+#define TEST_MQTT_EVENT_HANDLER test_mqtt_event_handler
 
 #include "mqtt_client.h"
 #include "esp_log.h"
 // #include "freertos/FreeRTOS.h"
+// #include "freertos/event_groups.h"
+#include "esp_event_loop.h"
 // #include "freertos/task.h"
 
 static const char *MQTT_TAG = "PixLedModule_MQTT";
@@ -18,11 +22,15 @@ static char const *check_topic = "/check";
 
 struct mqtt_context {
   // TaskHandle_t blink_led_task_handler;
-  bool connected;
+  int connected;
   bool subscribed_to_switch_topic;
   bool subscribed_to_color_topic;
 };
 
+esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event);
+esp_err_t test_mqtt_event_handler(esp_mqtt_event_handle_t event);
+
 void save_mqtt_uri_to_nvs(const char* uri);
 void load_mqtt_uri_from_nvs(char** uri);
-void mqtt_app_start();
+void mqtt_app_start(const char* uri, mqtt_event_callback_t mqtt_event_handler);
+void clean_mqtt();

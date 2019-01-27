@@ -52,7 +52,11 @@ esp_err_t main_wifi_event_handler(void *context, system_event_t *event)
         vTaskDelete(wifiContext->blinkLedTaskHandler);
         gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
         ESP_LOGI(MAIN_TAG, "Connect to MQTT");
-        mqtt_app_start();
+
+        char* mqtt_uri;
+        load_mqtt_uri_from_nvs(&mqtt_uri);
+        mqtt_app_start(mqtt_uri, MAIN_MQTT_EVENT_HANDLER);
+        free(mqtt_uri);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         {
@@ -87,12 +91,12 @@ esp_err_t test_wifi_event_handler(void *context, system_event_t *event)
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-        ESP_LOGI(WIFI_TAG, "Connection test successful!");
+        ESP_LOGI(WIFI_TAG, "Connection successful!");
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         {
           if (wifiContext->connected == -1){
-            ESP_LOGI(WIFI_TAG,"Connection test failed.\n");
+            ESP_LOGI(WIFI_TAG,"Connection failed.\n");
             wifiContext->connected=0;
           }
           vTaskDelete(wifiContext->blinkLedTaskHandler);

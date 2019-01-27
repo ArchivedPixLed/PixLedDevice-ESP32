@@ -1,6 +1,9 @@
 #include "mqtt_config.h"
 #include "main.h"
 
+static esp_mqtt_client_handle_t client;
+static bool client_initialized = false;
+
 void save_mqtt_uri_to_nvs(const char* uri) {
   // Init NVS connection
   nvs_handle nvs_config_handle;
@@ -29,7 +32,52 @@ void load_mqtt_uri_from_nvs(char** uri) {
   nvs_close(nvs_config_handle);
 }
 
-static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+esp_err_t test_mqtt_event_handler(esp_mqtt_event_handle_t event)
+{
+  esp_mqtt_client_handle_t client = event->client;
+  int msg_id;
+  struct mqtt_context* context = (mqtt_context*)(event->user_context);
+
+  switch (event->event_id) {
+      case MQTT_EVENT_CONNECTED:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
+          context->connected=1;
+          break;
+      case MQTT_EVENT_BEFORE_CONNECT:
+          break;
+
+      case MQTT_EVENT_DISCONNECTED:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
+          if (context->connected == -1){
+            ESP_LOGI(MQTT_TAG,"MQTT connection test failed.\n");
+            context->connected=0;
+          }
+          break;
+
+      case MQTT_EVENT_SUBSCRIBED:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_SUBSCRIBED, topic=%.*s, msg_id=%d",event->topic_len, event->topic, event->msg_id);
+          break;
+
+      case MQTT_EVENT_UNSUBSCRIBED:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+          break;
+
+      case MQTT_EVENT_PUBLISHED:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+          break;
+
+      case MQTT_EVENT_ERROR:
+          ESP_LOGI(MQTT_TAG, "MQTT_EVENT_ERROR");
+          break;
+
+      case MQTT_EVENT_DATA:
+          break;
+
+  }
+  return ESP_OK;
+}
+
+esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
   esp_mqtt_client_handle_t client = event->client;
   int msg_id;
@@ -38,7 +86,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
   switch (event->event_id) {
       case MQTT_EVENT_CONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
-          context->connected=true;
+          context->connected=1;
           // Publish light_id to /connected topic
           esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
 
@@ -56,7 +104,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 
       case MQTT_EVENT_DISCONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
-          context->connected=false;
+          context->connected=0;
           break;
 
       case MQTT_EVENT_SUBSCRIBED:
@@ -120,10 +168,10 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
   return ESP_OK;
 }
 
-void mqtt_app_start()
+void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_handler)
 {
   // Topics initialization
-  ESP_LOGI(MAIN_TAG, "Init topics");
+  ESP_LOGI(MQTT_TAG, "Init topics");
   sprintf(light_id, "%i", LIGHT_ID);
   sprintf(client_id, "light_%i", LIGHT_ID);
   sprintf(color_topic, "/buildings/-1/rooms/-10/lights/%i/color", LIGHT_ID);
@@ -138,11 +186,14 @@ void mqtt_app_start()
   ESP_LOGI(MQTT_TAG, "Connecting to broker...");
 
   // Context initialization
-  struct mqtt_context context {false, false, false};
+  struct mqtt_context context { };
+  context.connected = -1;
+  context.subscribed_to_switch_topic = false;
+  context.subscribed_to_color_topic = false;
 
   // Mqtt client initialization
   esp_mqtt_client_config_t mqtt_cfg = { };
-  mqtt_cfg.uri = MQTT_BROKER_URI;
+  mqtt_cfg.uri = broker_uri;
   mqtt_cfg.event_handle = mqtt_event_handler;
   mqtt_cfg.user_context = (void*)&context;
   mqtt_cfg.client_id = client_id;
@@ -154,10 +205,23 @@ void mqtt_app_start()
   mqtt_cfg.lwt_qos = 1;
   mqtt_cfg.lwt_retain = 0;
 
-  esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+  client = esp_mqtt_client_init(&mqtt_cfg);
   esp_mqtt_client_start(client);
+  client_initialized = true;
 
+  ESP_LOGI(MQTT_TAG, "Try to connect to %s", broker_uri);
+  while (context.connected == -1) {
+    printf(".");
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
 
   vTaskDelete(blinkLedTaskHandler);
   gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
+}
+
+void clean_mqtt() {
+  if (client_initialized) {
+    ESP_ERROR_CHECK( esp_mqtt_client_destroy(client) );
+    client_initialized = false;
+  }
 }
