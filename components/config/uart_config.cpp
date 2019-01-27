@@ -4,6 +4,7 @@
 #include "linenoise/linenoise.h"
 
 #include "cmd_wifi.h"
+#include "cmd_mqtt.h"
 
 // static QueueHandle_t uart0_queue;
 
@@ -48,6 +49,7 @@ void initialize_uart() {
   /* Register commands */
   esp_console_register_help_command();
   register_wifi();
+  register_mqtt();
 
   /* Prompt to be printed before each line.
        * This can be customized, made dynamic, etc.

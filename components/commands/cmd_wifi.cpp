@@ -49,7 +49,7 @@ static int handle_wifi(int argc, char** argv) {
   return 0;
 }
 
-void register_wifi()
+void register_mqtt()
 {
     wifi_args.ssid = arg_str0("s", "ssid", "<ssid>", "SSID of your access point");
     wifi_args.password = arg_str0("p", "password", "<password>", "WiFi password");
