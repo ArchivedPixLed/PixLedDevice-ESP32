@@ -1,6 +1,34 @@
 #include "mqtt_config.h"
 #include "main.h"
 
+void save_mqtt_uri_to_nvs(const char* uri) {
+  // Init NVS connection
+  nvs_handle nvs_config_handle;
+  ESP_ERROR_CHECK(nvs_open("conf", NVS_READWRITE, &nvs_config_handle));
+
+  // Save adress
+  ESP_ERROR_CHECK(nvs_set_str(nvs_config_handle, "mqtt_uri", uri));
+  ESP_ERROR_CHECK(nvs_commit(nvs_config_handle));
+
+  // Close NVS handler
+  nvs_close(nvs_config_handle);
+}
+
+void load_mqtt_uri_from_nvs(char** uri) {
+  // Init nvs connection
+  nvs_handle nvs_config_handle;
+  ESP_ERROR_CHECK(nvs_open("conf", NVS_READONLY, &nvs_config_handle));
+
+  // Load adress
+  size_t uri_length;
+  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_adress", NULL, &uri_length));
+  *uri = (char*) malloc(uri_length);
+  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_adress", *uri, &uri_length));
+
+  // Close NVS handler
+  nvs_close(nvs_config_handle);
+}
+
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
   esp_mqtt_client_handle_t client = event->client;
@@ -25,7 +53,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
           break;
       case MQTT_EVENT_BEFORE_CONNECT:
           break;
-          
+
       case MQTT_EVENT_DISCONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
           context->connected=false;

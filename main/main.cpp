@@ -97,6 +97,7 @@ void app_main()
     }
     ESP_ERROR_CHECK(err);
 
+    /* Save and check WiFi info */
     save_wifi_info_to_nvs(WIFI_SSID, WIFI_PASS);
 
     char* ssid;
@@ -104,10 +105,17 @@ void app_main()
     load_wifi_config_from_nvs(&ssid, &password);
     ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", ssid, password);
 
+    /* Save and check MQTT info */
+    save_mqtt_uri_to_nvs(MQTT_BROKER_URI);
+    char* mqtt_uri;
+    load_mqtt_uri_from_nvs(&mqtt_uri);
+    ESP_LOGI(MAIN_TAG, "MQTT URI written to nvs : %s", mqtt_uri);
+
     initialize_uart();
 
     // ESP_LOGI(MAIN_TAG, "Init WiFi");
     // wifi_init_sta(ssid, password, MAIN_WIFI_EVENT_HANDLER);
     free(ssid);
     free(password);
+    free(mqtt_uri);
 }

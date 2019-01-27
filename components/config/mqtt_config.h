@@ -1,3 +1,5 @@
+#define MQTT_BROKER_URI CONFIG_MQTT_BROKER_URI
+
 #include "mqtt_client.h"
 #include "esp_log.h"
 // #include "freertos/FreeRTOS.h"
@@ -21,4 +23,6 @@ struct mqtt_context {
   bool subscribed_to_color_topic;
 };
 
+void save_mqtt_uri_to_nvs(const char* uri);
+void load_mqtt_uri_from_nvs(char** uri);
 void mqtt_app_start();

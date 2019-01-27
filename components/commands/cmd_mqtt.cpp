@@ -9,7 +9,7 @@
 /** Arguments used by 'wifi' function */
 static struct {
     struct arg_lit *check;
-    struct arg_str *adress;
+    struct arg_str *uri;
     struct arg_lit *test;
     struct arg_end *end;
 } mqtt_args;
@@ -25,7 +25,7 @@ static int handle_mqtt(int argc, char** argv) {
 
 void register_wifi()
 {
-    mqtt_args.adress = arg_str0("a", "adress", "<adress>", "set the IP or name of your PixLed MQTT broker");
+    mqtt_args.uri = arg_str0("u", "uri", "<uri>", "set the URI (IP or name) of your PixLed MQTT broker");
     mqtt_args.check = arg_lit0("c", "check", "check current stored configuration");
     mqtt_args.test = arg_lit0("t", "test", "performs an MQTT connection test from the stored configuration");
     mqtt_args.end = arg_end(3);
