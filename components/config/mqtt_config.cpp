@@ -21,9 +21,9 @@ void load_mqtt_uri_from_nvs(char** uri) {
 
   // Load adress
   size_t uri_length;
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_adress", NULL, &uri_length));
+  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_uri", NULL, &uri_length));
   *uri = (char*) malloc(uri_length);
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_adress", *uri, &uri_length));
+  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_uri", *uri, &uri_length));
 
   // Close NVS handler
   nvs_close(nvs_config_handle);
