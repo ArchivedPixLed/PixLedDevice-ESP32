@@ -25,6 +25,7 @@ void load_wifi_config_from_nvs(char** ssid, char** password) {
   // SSID
   size_t ssid_length;
   ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", NULL, &ssid_length));
+
   *ssid = (char*) malloc(ssid_length);
   ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", *ssid, &ssid_length));
 
@@ -44,32 +45,28 @@ esp_err_t main_wifi_event_handler(void *context, system_event_t *event)
         esp_wifi_connect();
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        wifiContext->connected=1;
+        wifiContext->connected=WIFI_STATUS_CONNECTED;
         ESP_LOGI(WIFI_TAG, "got ip:%s",
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
         vTaskDelete(wifiContext->blinkLedTaskHandler);
         gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
-        ESP_LOGI(MAIN_TAG, "Connect to MQTT");
-
-        char* mqtt_uri;
-        load_mqtt_uri_from_nvs(&mqtt_uri);
-        mqtt_app_start(mqtt_uri, MAIN_MQTT_EVENT_HANDLER);
-        free(mqtt_uri);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         {
-          wifiContext->connected=0;
           if (s_retry_num < MAXIMUM_RETRY) {
               esp_wifi_connect();
               xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
               s_retry_num++;
               ESP_LOGI(WIFI_TAG,"retry to connect to the AP");
           }
-          vTaskDelete(wifiContext->blinkLedTaskHandler);
-          gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
-          ESP_LOGI(WIFI_TAG,"connect to the AP fail\n");
+          else {
+            wifiContext->connected=WIFI_STATUS_DISCONNECTED;
+            vTaskDelete(wifiContext->blinkLedTaskHandler);
+            gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
+            ESP_LOGI(WIFI_TAG,"Fail to connect to the AP. Check your connection parameters.\n");
+          }
           break;
         }
     default:
@@ -86,7 +83,7 @@ esp_err_t test_wifi_event_handler(void *context, system_event_t *event)
         esp_wifi_connect();
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        wifiContext->connected=1;
+        wifiContext->connected=WIFI_STATUS_CONNECTED;
         ESP_LOGI(WIFI_TAG, "got ip:%s",
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
         s_retry_num = 0;
@@ -95,9 +92,9 @@ esp_err_t test_wifi_event_handler(void *context, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         {
-          if (wifiContext->connected == -1){
+          if (wifiContext->connected == WIFI_STATUS_WAITING){
             ESP_LOGI(WIFI_TAG,"Connection failed.\n");
-            wifiContext->connected=0;
+            wifiContext->connected=WIFI_STATUS_DISCONNECTED;
           }
           vTaskDelete(wifiContext->blinkLedTaskHandler);
           gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
@@ -109,7 +106,7 @@ esp_err_t test_wifi_event_handler(void *context, system_event_t *event)
     return ESP_OK;
 }
 
-WifiContext wifi_init_sta(const char* ssid,const char* password, system_event_cb_t wifi_event_handler)
+WifiContext* wifi_init_sta(const char* ssid,const char* password, system_event_cb_t wifi_event_handler)
 {
     /* BLINK LED */
     uint32_t delay_ms = 100;
@@ -124,7 +121,7 @@ WifiContext wifi_init_sta(const char* ssid,const char* password, system_event_cb
     /* Start WiFI events handler */
     tcpip_adapter_init();
     wifiContext.blinkLedTaskHandler = blinkLedTaskHandler;
-    wifiContext.connected = -1;
+    wifiContext.connected = WIFI_STATUS_WAITING;
 
     if (!loop_init) {
       ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, &wifiContext));
@@ -144,12 +141,12 @@ WifiContext wifi_init_sta(const char* ssid,const char* password, system_event_cb
     ESP_LOGI(WIFI_TAG, "Try to connect with SSID=%s password=%s",
              ssid, password);
 
-    // Wait for connection result
-    while(wifiContext.connected == -1){
-       printf(".");
-       vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-    return wifiContext;
+    // // Wait for connection result
+    // while(wifiContext.connected == -1){
+    //    printf(".");
+    //    vTaskDelay(500 / portTICK_PERIOD_MS);
+    // }
+    return &wifiContext;
 }
 
 void clean_wifi() {

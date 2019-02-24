@@ -4,6 +4,10 @@
 #define MAIN_WIFI_EVENT_HANDLER main_wifi_event_handler
 #define TEST_WIFI_EVENT_HANDLER test_wifi_event_handler
 
+#define WIFI_STATUS_WAITING -1
+#define WIFI_STATUS_DISCONNECTED 0
+#define WIFI_STATUS_CONNECTED 1
+
 #include <string.h>
 #include "esp_wifi.h"
 #include "freertos/event_groups.h"
@@ -26,7 +30,7 @@ struct WifiContext {
 esp_err_t main_wifi_event_handler(void *blinkLedTaskHandler, system_event_t *event);
 esp_err_t test_wifi_event_handler(void *blinkLedTaskHandler, system_event_t *event);
 
-WifiContext wifi_init_sta(const char* ssid, const char* password, system_event_cb_t wifi_event_handler);
+WifiContext* wifi_init_sta(const char* ssid, const char* password, system_event_cb_t wifi_event_handler);
 void clean_wifi();
 void save_wifi_info_to_nvs(const char* ssid, const char* password);
 void load_wifi_config_from_nvs(char** ssid, char** password);

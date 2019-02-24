@@ -35,9 +35,9 @@ static int handle_mqtt(int argc, char** argv) {
       char* ssid;
       char* password;
       load_wifi_config_from_nvs(&ssid, &password);
-      WifiContext connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+      WifiContext* connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
 
-      if (connection_result.connected == 1) {
+      if (connection_result->connected == 1) {
         clean_mdns();
         init_mdns();
         char ip[16];
@@ -71,9 +71,9 @@ static int handle_mqtt(int argc, char** argv) {
     char* ssid;
     char* password;
     load_wifi_config_from_nvs(&ssid, &password);
-    WifiContext connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+    WifiContext* connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
 
-    if (connection_result.connected == 1) {
+    if (connection_result->connected == 1) {
       clean_mqtt();
       char* uri;
       load_mqtt_uri_from_nvs(&uri);
