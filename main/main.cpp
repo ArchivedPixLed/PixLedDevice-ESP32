@@ -31,6 +31,12 @@ void blink_task(void *delay_ms)
     }
 }
 
+/**
+ * Called on color received. Convert the string payload into a 4 bytes long that
+ * and send it to the strip.
+ * @param[in] payload_length Length of the MQTT message payload
+ * @param[in] payload MQTT message payload
+ */
 void handle_color_changed(size_t payload_length, char* payload) {
     char* ptr;
     char color_str[payload_length + 1];
@@ -115,6 +121,17 @@ void app_main()
 
     // ESP_LOGI(MAIN_TAG, "Init WiFi");
     // wifi_init_sta(ssid, password, MAIN_WIFI_EVENT_HANDLER);
+    // init_mdns();
+    // char ip[16];
+    // char port[5];
+    // bool found = look_for_mqtt_broker(ip, port);
+    // if (found) {
+    //   char uri[30];
+    //   sprintf(uri, "mqtt://%s:%s/", ip, port);
+    //   ESP_LOGI(MQTT_CMD_TAG, "Saving broker uri %s", uri);
+    //   save_mqtt_uri_to_nvs(uri);
+    // }
+
     free(ssid);
     free(password);
     free(mqtt_uri);
