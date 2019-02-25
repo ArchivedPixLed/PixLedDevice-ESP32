@@ -141,11 +141,6 @@ WifiContext* wifi_init_sta(const char* ssid,const char* password, system_event_c
     ESP_LOGI(WIFI_TAG, "Try to connect with SSID=%s password=%s",
              ssid, password);
 
-    // // Wait for connection result
-    // while(wifiContext.connected == -1){
-    //    printf(".");
-    //    vTaskDelay(500 / portTICK_PERIOD_MS);
-    // }
     return &wifiContext;
 }
 

@@ -43,7 +43,10 @@ static int handle_wifi(int argc, char** argv) {
     char* ssid;
     char* password;
     load_wifi_config_from_nvs(&ssid, &password);
-    wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+    WifiContext* wifiContext = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+    while(wifiContext->connected == WIFI_STATUS_WAITING) {
+
+    }
     clean_wifi();
   }
   return 0;

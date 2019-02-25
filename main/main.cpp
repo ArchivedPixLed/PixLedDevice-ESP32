@@ -4,6 +4,7 @@
 #include "mqtt_config.h"
 #include "wifi_config.h"
 #include "console_config.h"
+#include "mdns_config.h"
 #include "mode_handler.h"
 
 extern "C" {
@@ -133,6 +134,32 @@ void launch_default_mode() {
   }
 
   if(wifiContext->connected == WIFI_STATUS_CONNECTED) {
+    init_mdns();
+
+    ESP_LOGI(MAIN_TAG, "Looking for the mqtt broker...");
+    char mqtt_ip[16];
+    char mqtt_port[5];
+    bool found = look_for_mqtt_broker(mqtt_ip, mqtt_port);
+    if (found) {
+      char uri[30];
+      sprintf(uri, "mqtt://%s:%s/", mqtt_ip, mqtt_port);
+      ESP_LOGI(MAIN_TAG, "Saving broker uri %s", uri);
+      save_mqtt_uri_to_nvs(uri);
+    }
+
+    ESP_LOGI(MAIN_TAG, "Looking for the server...");
+    char server_ip[16];
+    char server_port[5];
+    found = look_for_server(server_ip, server_port);
+    if (found) {
+      char url[30];
+      sprintf(url, "http://%s:%s/", server_ip, server_port);
+      ESP_LOGI(MAIN_TAG, "Saving server url %s", url);
+      //save_server_url_to_nvs(url);
+    }
+
+    clean_mdns();
+
     char* mqtt_uri;
     load_mqtt_uri_from_nvs(&mqtt_uri);
     mqtt_app_start(mqtt_uri, MAIN_MQTT_EVENT_HANDLER);

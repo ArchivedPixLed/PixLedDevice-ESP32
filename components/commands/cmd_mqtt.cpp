@@ -35,9 +35,10 @@ static int handle_mqtt(int argc, char** argv) {
       char* ssid;
       char* password;
       load_wifi_config_from_nvs(&ssid, &password);
-      WifiContext* connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
-
-      if (connection_result->connected == 1) {
+      WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+      while(connection_status->connected == WIFI_STATUS_WAITING) {
+      }
+      if (connection_status->connected == WIFI_STATUS_CONNECTED) {
         clean_mdns();
         init_mdns();
         char ip[16];
@@ -71,9 +72,10 @@ static int handle_mqtt(int argc, char** argv) {
     char* ssid;
     char* password;
     load_wifi_config_from_nvs(&ssid, &password);
-    WifiContext* connection_result = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
-
-    if (connection_result->connected == 1) {
+    WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+    while(connection_status->connected == WIFI_STATUS_WAITING) {
+    }
+    if (connection_status->connected == WIFI_STATUS_CONNECTED) {
       clean_mqtt();
       char* uri;
       load_mqtt_uri_from_nvs(&uri);
