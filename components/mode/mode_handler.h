@@ -8,8 +8,8 @@
 #define MODE_TASKSIZE 4096
 
 #define MODE_TAG "MODE"
-#define PIN_MODE_1 13
-#define PIN_MODE_2 14
+// #define PIN_MODE_1 13
+// #define PIN_MODE_2 14
 #define GPIO_MODE_PIN_SEL  ((1ULL<<PIN_MODE_1) | (1ULL<<PIN_MODE_2))
 
 #define DEFAULT_MODE 0

@@ -1,14 +1,38 @@
 menu "Module Configuration"
 
+config LED_PIN
+    int "Led Pin"
+  help
+    PIN used to connected the led strip data.
+
 config NUM_LED
     int "Led Number"
 	help
 		Number of LEDs associated to the module.
 
-config LIGHT_ID
-    int "Light ID"
+config BLINK_GPIO
+    int "Blink GPIO"
   help
-    ID of the light associated to this module.
+    GPIO that correspond to the built-in LED. (default : 2)
+  default 2
+
+config MODE_HANDLER
+    bool "Enables mode handler"
+    default true
+  help
+    Uncheck if you don't want to use modes. Only the "default" mode will be available.
+
+config MODE_PIN_1
+    int "Mode Pin 1"
+    depends on MODE_HANDLER
+  help
+    First pin to handle modes.
+
+config MODE_PIN_2
+    int "Mode Pin 2"
+    depends on MODE_HANDLER
+  help
+    Second pin to handle modes.
 
 config WIFI_SSID
     string "WiFi SSID"
@@ -16,8 +40,13 @@ config WIFI_SSID
 config WIFI_PASS
     string "WiFi PASS"
 
+config SERVER_URL
+    string "Server url"
+  help
+    URL of the HTTP server.
+
 config MQTT_BROKER_URI
-    string "Broker Uri"
+    string "Broker uri"
   help
     The URI of your TCP mqtt broker.
     Check https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/mqtt.html#uri

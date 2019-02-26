@@ -34,36 +34,44 @@ static int handle_mqtt(int argc, char** argv) {
       clean_wifi();
       char* ssid;
       char* password;
-      load_wifi_config_from_nvs(&ssid, &password);
-      WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
-      while(connection_status->connected == WIFI_STATUS_WAITING) {
-      }
-      if (connection_status->connected == WIFI_STATUS_CONNECTED) {
-        clean_mdns();
-        init_mdns();
-        char ip[16];
-        char port[5];
-        bool found = look_for_mqtt_broker(ip, port);
-        if (found) {
-          char uri[30];
-          sprintf(uri, "mqtt://%s:%s/", ip, port);
-          ESP_LOGI(MQTT_CMD_TAG, "Saving broker uri %s", uri);
-          save_mqtt_uri_to_nvs(uri);
+      if (load_wifi_config_from_nvs(&ssid, &password)) {
+        WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+        while(connection_status->connected == WIFI_STATUS_WAITING) {
         }
-        clean_mdns();
+        if (connection_status->connected == WIFI_STATUS_CONNECTED) {
+          clean_mdns();
+          init_mdns();
+          char ip[16];
+          char port[5];
+          bool found = look_for_mqtt_broker(ip, port);
+          if (found) {
+            char uri[30];
+            sprintf(uri, "mqtt://%s:%s/", ip, port);
+            ESP_LOGI(MQTT_CMD_TAG, "Saving broker uri %s", uri);
+            save_mqtt_uri_to_nvs(uri);
+          }
+          clean_mdns();
+        }
+        else {
+          ESP_LOGI(MQTT_CMD_TAG, "WiFi connection failed.");
+        }
+        clean_wifi();
       }
       else {
-        ESP_LOGI(MQTT_CMD_TAG, "WiFi connection failed.");
+        ESP_LOGI(MQTT_CMD_TAG, "Missing wifi parameters.");
       }
-      clean_wifi();
     }
   }
 
   if(mqtt_args.check->count > 0) {
     char* mqtt_uri;
-    load_mqtt_uri_from_nvs(&mqtt_uri);
-    ESP_LOGI(MQTT_CMD_TAG, "Currently stored mqtt uri : %s", mqtt_uri);
-    free(mqtt_uri);
+    if (load_mqtt_uri_from_nvs(&mqtt_uri)) {
+      ESP_LOGI(MQTT_CMD_TAG, "Currently stored mqtt uri : %s", mqtt_uri);
+      free(mqtt_uri);
+    }
+    else {
+      ESP_LOGI(MQTT_CMD_TAG, "No mqtt uri stored yet.");
+    }
   }
 
   if(mqtt_args.test->count > 0) {
@@ -71,29 +79,36 @@ static int handle_mqtt(int argc, char** argv) {
     clean_wifi();
     char* ssid;
     char* password;
-    load_wifi_config_from_nvs(&ssid, &password);
-    WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
-    while(connection_status->connected == WIFI_STATUS_WAITING) {
-    }
-    if (connection_status->connected == WIFI_STATUS_CONNECTED) {
-      clean_mqtt();
-      char* uri;
-      load_mqtt_uri_from_nvs(&uri);
-      mqtt_app_start(uri, TEST_MQTT_EVENT_HANDLER);
-
-      clean_mqtt();
+    if (load_wifi_config_from_nvs(&ssid, &password)) {
+      WifiContext* connection_status = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+      while(connection_status->connected == WIFI_STATUS_WAITING) {
+      }
+      if (connection_status->connected == WIFI_STATUS_CONNECTED) {
+        clean_mqtt();
+        char* uri;
+        if (load_mqtt_uri_from_nvs(&uri)) {
+          mqtt_app_start(uri, TEST_MQTT_EVENT_HANDLER);
+          clean_mqtt();
+        }
+        else {
+          ESP_LOGI(MQTT_CMD_TAG, "Missing broker uri.");
+        }
+      }
+      else {
+        ESP_LOGI(MQTT_CMD_TAG, "WiFi connection failed.");
+      }
+      clean_wifi();
     }
     else {
-      ESP_LOGI(MQTT_CMD_TAG, "WiFi connection failed.");
+      ESP_LOGI(MQTT_CMD_TAG, "Missing wifi parameters.");
     }
-    clean_wifi();
   }
   return 0;
 }
 
 void register_mqtt()
 {
-    mqtt_args.uri = arg_str0("u", "uri", "<uri>", "set the URI (IP or name) of your PixLed MQTT broker");
+    mqtt_args.uri = arg_str0("u", "uri", "<uri>", "set the URI (using IP or name) of your PixLed MQTT broker");
     mqtt_args.check = arg_lit0("c", "check", "check current stored configuration");
     mqtt_args.test = arg_lit0("t", "test", "performs an MQTT connection test from the stored configuration");
     mqtt_args.mdns = arg_lit0("m", "mdns", "Look for a PixLed broker using mDNS (ignored if -u is specified)");

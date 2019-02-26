@@ -17,19 +17,25 @@ void save_mqtt_uri_to_nvs(const char* uri) {
   nvs_close(nvs_config_handle);
 }
 
-void load_mqtt_uri_from_nvs(char** uri) {
+bool load_mqtt_uri_from_nvs(char** uri) {
   // Init nvs connection
   nvs_handle nvs_config_handle;
   ESP_ERROR_CHECK(nvs_open("conf", NVS_READONLY, &nvs_config_handle));
 
   // Load adress
   size_t uri_length;
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_uri", NULL, &uri_length));
-  *uri = (char*) malloc(uri_length);
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_uri", *uri, &uri_length));
+  esp_err_t err = nvs_get_str(nvs_config_handle, "mqtt_uri", NULL, &uri_length);
+  bool found = false;
+  if (err != ESP_ERR_NOT_FOUND) {
+    found = true;
+    *uri = (char*) malloc(uri_length);
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "mqtt_uri", *uri, &uri_length));
+  }
 
   // Close NVS handler
   nvs_close(nvs_config_handle);
+
+  return found;
 }
 
 esp_err_t test_mqtt_event_handler(esp_mqtt_event_handle_t event)
@@ -87,8 +93,8 @@ esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event)
       case MQTT_EVENT_CONNECTED:
           ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
           context->connected=1;
-          // Publish light_id to /connected topic
-          esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
+          // Publish device_id to /connected topic
+          esp_mqtt_client_publish(client, connection_topic, device_id, 0, 1, 0);
 
           // (Re)initialize subscribtions
           context->subscribed_to_switch_topic=false;
@@ -135,7 +141,7 @@ esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event)
           topic_str[topic_len] = '\0';
 
           if (strcmp(topic_str, check_topic) == 0) {
-            esp_mqtt_client_publish(client, connection_topic, light_id, 0, 1, 0);
+            esp_mqtt_client_publish(client, connection_topic, device_id, 0, 1, 0);
           }
 
 
@@ -172,10 +178,12 @@ void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_han
 {
   // Topics initialization
   ESP_LOGI(MQTT_TAG, "Init topics");
-  sprintf(light_id, "%i", LIGHT_ID);
-  sprintf(client_id, "light_%i", LIGHT_ID);
-  sprintf(color_topic, "/buildings/-1/rooms/-10/lights/%i/color", LIGHT_ID);
-  sprintf(switch_topic, "/buildings/-1/rooms/-10/lights/%i/switch", LIGHT_ID);
+  int8_t id;
+  load_id_from_nvs(&id);
+  sprintf(device_id, "%i", id);
+  sprintf(client_id, "light_%i", id);
+  sprintf(color_topic, "/devices/%i/state/color", id);
+  sprintf(switch_topic, "/buildings/%i/state/switch", id);
 
   // Blink on board led
   uint32_t delay_ms = 300;
@@ -201,7 +209,7 @@ void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_han
   // If this light disconnect, devices subscribed to this topic (e.g. Spring
   // server and Android apps) will be warned that this module has disconnected.
   mqtt_cfg.lwt_topic = disconnection_topic;
-  mqtt_cfg.lwt_msg = light_id;
+  mqtt_cfg.lwt_msg = device_id;
   mqtt_cfg.lwt_qos = 1;
   mqtt_cfg.lwt_retain = 0;
 

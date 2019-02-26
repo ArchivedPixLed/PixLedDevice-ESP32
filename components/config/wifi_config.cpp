@@ -17,24 +17,42 @@ void save_wifi_info_to_nvs(const char* ssid, const char* password) {
   nvs_close(nvs_config_handle);
 }
 
-void load_wifi_config_from_nvs(char** ssid, char** password) {
+bool load_wifi_config_from_nvs(char** ssid, char** password) {
   // Init nvs connection
   nvs_handle nvs_config_handle;
   ESP_ERROR_CHECK(nvs_open("conf", NVS_READONLY, &nvs_config_handle));
 
   // SSID
   size_t ssid_length;
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", NULL, &ssid_length));
+  esp_err_t err = nvs_get_str(nvs_config_handle, "wifi_ssid", NULL, &ssid_length);
 
-  *ssid = (char*) malloc(ssid_length);
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", *ssid, &ssid_length));
+  bool ssid_found = false;
+  if (err != ESP_ERR_NOT_FOUND) {
+    ssid_found = true;
+    *ssid = (char*) malloc(ssid_length);
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_ssid", *ssid, &ssid_length));
+  }
+  else {
+    *ssid = (char*) malloc(2);
+    sprintf(*ssid, " ");
+  }
 
   // PASSWORD
   size_t pw_length;
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_pw", NULL, &pw_length));
-  *password = (char*) malloc(ssid_length);
-  ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_pw", *password, &pw_length));
+  err = nvs_get_str(nvs_config_handle, "wifi_pw", NULL, &pw_length);
+
+  bool pw_found = false;
+  if (err != ESP_ERR_NOT_FOUND) {
+    pw_found = true;
+    *password = (char*) malloc(ssid_length);
+    ESP_ERROR_CHECK(nvs_get_str(nvs_config_handle, "wifi_pw", *password, &pw_length));
+  }
+  else {
+    *password = (char*) malloc(2);
+    sprintf(*password, " ");
+  }
   nvs_close(nvs_config_handle);
+  return ssid_found && pw_found;
 }
 
 esp_err_t main_wifi_event_handler(void *context, system_event_t *event)

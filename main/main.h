@@ -1,7 +1,10 @@
-#define BLINK_GPIO 2
-#define LED_PIN 12
+#define BLINK_GPIO CONFIG_BLINK_GPIO
+#define LED_PIN CONFIG_LED_PIN
 #define NUM_LED CONFIG_NUM_LED
-#define LIGHT_ID CONFIG_LIGHT_ID
+#if CONFIG_MODE_HANDLER
+  #define PIN_MODE_1 CONFIG_MODE_PIN_1
+  #define PIN_MODE_2 CONFIG_MODE_PIN_2
+#endif
 
 #define MAIN_TAG "PixLedModule_Main"
 

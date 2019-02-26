@@ -42,12 +42,17 @@ static int handle_wifi(int argc, char** argv) {
     clean_wifi();
     char* ssid;
     char* password;
-    load_wifi_config_from_nvs(&ssid, &password);
-    WifiContext* wifiContext = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
-    while(wifiContext->connected == WIFI_STATUS_WAITING) {
+    if (load_wifi_config_from_nvs(&ssid, &password)) {
+      WifiContext* wifiContext = wifi_init_sta(ssid, password, TEST_WIFI_EVENT_HANDLER);
+      while(wifiContext->connected == WIFI_STATUS_WAITING) {
 
+      }
+      clean_wifi();
     }
-    clean_wifi();
+    else {
+      ESP_LOGI(WIFI_CMD_TAG, "Missing wifi parameters");
+    }
+
   }
   return 0;
 }

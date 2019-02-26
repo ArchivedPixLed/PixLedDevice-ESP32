@@ -14,7 +14,8 @@
 #include "esp_log.h"
 #include "esp_event_loop.h"
 
-static const char *WIFI_TAG = "PixLedModule_WiFi";
+#define WIFI_TAG "WIFI"
+
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -33,4 +34,4 @@ esp_err_t test_wifi_event_handler(void *blinkLedTaskHandler, system_event_t *eve
 WifiContext* wifi_init_sta(const char* ssid, const char* password, system_event_cb_t wifi_event_handler);
 void clean_wifi();
 void save_wifi_info_to_nvs(const char* ssid, const char* password);
-void load_wifi_config_from_nvs(char** ssid, char** password);
+bool load_wifi_config_from_nvs(char** ssid, char** password);

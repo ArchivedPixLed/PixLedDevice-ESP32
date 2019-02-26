@@ -3,15 +3,13 @@
 #define TEST_MQTT_EVENT_HANDLER test_mqtt_event_handler
 
 #include "mqtt_client.h"
+#include "server_config.h"
 #include "esp_log.h"
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/event_groups.h"
 #include "esp_event_loop.h"
-// #include "freertos/task.h"
 
-static const char *MQTT_TAG = "PixLedModule_MQTT";
+#define MQTT_TAG "MQTT"
 
-static char light_id[5];
+static char device_id[5];
 static char client_id[10];
 static char color_topic[50];
 static char switch_topic[50];
@@ -31,6 +29,6 @@ esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event);
 esp_err_t test_mqtt_event_handler(esp_mqtt_event_handle_t event);
 
 void save_mqtt_uri_to_nvs(const char* uri);
-void load_mqtt_uri_from_nvs(char** uri);
+bool load_mqtt_uri_from_nvs(char** uri);
 void mqtt_app_start(const char* uri, mqtt_event_callback_t mqtt_event_handler);
 void clean_mqtt();

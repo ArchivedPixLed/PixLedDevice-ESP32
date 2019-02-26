@@ -87,6 +87,14 @@ void handle_switch(size_t payload_length, char* payload) {
 
 void app_main()
 {
+  last_color.red = 10;
+  last_color.green = 10;
+  last_color.blue = 10;
+  for (int i = 0; i < NUM_LED; i++) {
+    strip.setPixel(i, last_color.red, last_color.green, last_color.blue);
+  }
+  strip.show();
+
   ESP_LOGI(MAIN_TAG, "Init nvs");
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -105,6 +113,15 @@ void app_main()
     ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", ssid, password);
     free(ssid);
     free(password);
+  }
+
+  if(!(strcmp(SERVER_URL, "") == 0)) {
+    /* Save and check MQTT info */
+    save_server_url_to_nvs(SERVER_URL);
+    char* server_url;
+    load_server_url_from_nvs(&server_url);
+    ESP_LOGI(MAIN_TAG, "Server url written to nvs : %s", server_url);
+    free(server_url);
   }
 
   if(!(strcmp(MQTT_BROKER_URI, "") == 0)) {
@@ -152,45 +169,20 @@ void launch_default_mode() {
     char server_port[5];
     found = look_for_server(server_ip, server_port);
     if (found) {
-      char url[30];
-      sprintf(url, "http://%s:%s/", server_ip, server_port);
+      char url[50];
+      sprintf(url, "http://%s:%s", server_ip, server_port);
       ESP_LOGI(MAIN_TAG, "Saving server url %s", url);
-      //save_server_url_to_nvs(url);
+      save_server_url_to_nvs(url);
     }
-
     clean_mdns();
+
+    perform_device_request();
 
     char* mqtt_uri;
     load_mqtt_uri_from_nvs(&mqtt_uri);
     mqtt_app_start(mqtt_uri, MAIN_MQTT_EVENT_HANDLER);
     free(mqtt_uri);
   }
-
-  // init_mdns();
-  // char ip[16];
-  // char port[5];
-  // bool found = look_for_mqtt_broker(ip, port);
-  // if (found) {
-  //   char uri[30];
-  //   sprintf(uri, "mqtt://%s:%s/", ip, port);
-  //   ESP_LOGI(MQTT_CMD_TAG, "Saving broker uri %s", uri);
-  //   save_mqtt_uri_to_nvs(uri);
-  // }
-
-  // char* mqtt_uri;
-  // load_mqtt_uri_from_nvs(&mqtt_uri);
-  // mqtt_app_start(mqtt_uri, MAIN_MQTT_EVENT_HANDLER);
-  //
-  //
-  // ESP_LOGI(MAIN_TAG, "Color topic : %s", color_topic);
-  // ESP_LOGI(MAIN_TAG, "Init strip");
-  // last_color.red = 10;
-  // last_color.green = 10;
-  // last_color.blue = 10;
-  // for (int i = 0; i < NUM_LED; i++) {
-  //   strip.setPixel(i, last_color.red, last_color.green, last_color.blue);
-  // }
-  // strip.show();
 }
 
 void quit_default_mode() {
