@@ -1,5 +1,6 @@
 #include "mode_handler.h"
 
+#if CONFIG_MODE_HANDLER
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -72,3 +73,4 @@ void initialize_mode_handler() {
     gpio_isr_handler_add((gpio_num_t) PIN_MODE_2, mode_handler, (void*) mode_task_handler);
 
 }
+#endif

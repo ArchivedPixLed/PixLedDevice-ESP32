@@ -1,10 +1,6 @@
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 #define LED_PIN CONFIG_LED_PIN
 #define NUM_LED CONFIG_NUM_LED
-#if CONFIG_MODE_HANDLER
-  #define PIN_MODE_1 CONFIG_MODE_PIN_1
-  #define PIN_MODE_2 CONFIG_MODE_PIN_2
-#endif
 
 #define MAIN_TAG "PixLedModule_Main"
 
@@ -22,8 +18,8 @@
 
 
 void blink_task(void *delay_ms);
-void handle_color_changed(size_t payload_length, char* payload);
-void handle_switch(size_t payload_length, char* payload);
+void handle_color_changed(long color);
+void handle_switch(const char* switch_str);
 
 void launch_default_mode();
 void quit_default_mode();

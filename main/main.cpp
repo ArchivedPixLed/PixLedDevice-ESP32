@@ -5,7 +5,9 @@
 #include "wifi_config.h"
 #include "console_config.h"
 #include "mdns_config.h"
-#include "mode_handler.h"
+#if CONFIG_MODE_HANDLER
+  #include "mode_handler.h"
+#endif
 
 extern "C" {
   void app_main();
@@ -39,15 +41,7 @@ void blink_task(void *delay_ms)
  * @param[in] payload_length Length of the MQTT message payload
  * @param[in] payload MQTT message payload
  */
-void handle_color_changed(size_t payload_length, char* payload) {
-    char* ptr;
-    char color_str[payload_length + 1];
-    for (int i = 0; i < payload_length + 1; i++) {
-      color_str[i] = payload[i];
-    }
-    color_str[payload_length] = '\0';
-    long color = strtol(color_str, &ptr, 10);
-
+void handle_color_changed(long color) {
     uint32_t int_color = color  & 0xffffffff;
     last_color.red = (int_color >> 16) & 0xff;
     last_color.green = (int_color >> 8) & 0xff;
@@ -61,12 +55,7 @@ void handle_color_changed(size_t payload_length, char* payload) {
     }
 }
 
-void handle_switch(size_t payload_length, char* payload) {
-    char switch_str[payload_length + 1];
-    for (int i = 0; i < payload_length + 1; i++) {
-      switch_str[i] = payload[i];
-    }
-    switch_str[payload_length] = '\0';
+void handle_switch(const char* switch_str) {
     if (strcmp(switch_str, "ON") == 0) {
       ESP_LOGI(MAIN_TAG, "Switch On");
       on = true;
@@ -132,9 +121,12 @@ void app_main()
     ESP_LOGI(MAIN_TAG, "MQTT URI written to nvs : %s", mqtt_uri);
     free(mqtt_uri);
   }
-
-  initialize_mode_handler();
-  switchMode();
+  #if CONFIG_MODE_HANDLER
+    initialize_mode_handler();
+    switchMode();
+  #else
+    launch_default_mode();
+  #endif
 }
 
 void launch_default_mode() {

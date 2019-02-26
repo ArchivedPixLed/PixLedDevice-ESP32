@@ -9,6 +9,10 @@
 
 #define MQTT_TAG "MQTT"
 
+#define MQTT_STATUS_WAITING -1
+#define MQTT_STATUS_DISCONNECTED 0
+#define MQTT_STATUS_CONNECTED 1
+
 static char device_id[5];
 static char client_id[10];
 static char color_topic[50];
@@ -19,10 +23,7 @@ static char const *check_topic = "/check";
 
 
 struct mqtt_context {
-  // TaskHandle_t blink_led_task_handler;
-  int connected;
-  bool subscribed_to_switch_topic;
-  bool subscribed_to_color_topic;
+  volatile int connected;
 };
 
 esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event);

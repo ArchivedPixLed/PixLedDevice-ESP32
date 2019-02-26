@@ -1,6 +1,7 @@
 #include "server_config.h"
 #include "esp_log.h"
 #include "cJSON.h"
+#include "main.h"
 
 #define SERVER_TAG "SERVER"
 
@@ -81,59 +82,86 @@ bool load_server_url_from_nvs(char** url) {
 
 esp_err_t fetch_device_handler(esp_http_client_event_t *evt)
 {
-    switch(evt->event_id) {
-        case HTTP_EVENT_ERROR:
-            ESP_LOGI(SERVER_TAG, "HTTP ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            ESP_LOGI(SERVER_TAG, "HTTP CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            break;
-        case HTTP_EVENT_ON_DATA:
-            ESP_LOGI(SERVER_TAG, "Device info received : %.*s", evt->data_len, (char*)evt->data);
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            ESP_LOGI(SERVER_TAG, "HTTP FINISH");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            ESP_LOGI(SERVER_TAG, "HTTP DISCONNECTED");
-            break;
-    }
-    return ESP_OK;
+  cJSON *device;
+  cJSON *state;
+  cJSON *color_object;
+  char* status;
+  long color;
+  switch(evt->event_id) {
+      case HTTP_EVENT_ERROR:
+          ESP_LOGI(SERVER_TAG, "HTTP ERROR");
+          break;
+      case HTTP_EVENT_ON_CONNECTED:
+          ESP_LOGI(SERVER_TAG, "HTTP CONNECTED");
+          break;
+      case HTTP_EVENT_HEADER_SENT:
+          break;
+      case HTTP_EVENT_ON_HEADER:
+          break;
+      case HTTP_EVENT_ON_DATA:
+          ESP_LOGI(SERVER_TAG, "Device info received : %.*s", evt->data_len, (char*)evt->data);
+          device = cJSON_Parse((char*)evt->data);
+          state = cJSON_GetObjectItem(device, "state");
+          status = cJSON_GetObjectItem(state, "toggle")->valuestring;
+          color_object = cJSON_GetObjectItem(state, "color");
+          color = cJSON_GetObjectItem(color_object, "argb")->valueint;
+
+          handle_switch(status);
+          handle_color_changed(color);
+          cJSON_Delete(device);
+          break;
+      case HTTP_EVENT_ON_FINISH:
+          ESP_LOGI(SERVER_TAG, "HTTP FINISH");
+          break;
+      case HTTP_EVENT_DISCONNECTED:
+          ESP_LOGI(SERVER_TAG, "HTTP DISCONNECTED");
+          break;
+  }
+  return ESP_OK;
 }
 
 esp_err_t create_device_handler(esp_http_client_event_t *evt)
 {
-    cJSON *device;
-    int device_id;
-    switch(evt->event_id) {
-        case HTTP_EVENT_ERROR:
-            ESP_LOGI(SERVER_TAG, "HTTP ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            ESP_LOGI(SERVER_TAG, "HTTP CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            break;
-        case HTTP_EVENT_ON_DATA:
-            ESP_LOGI(SERVER_TAG, "Device registered : %.*s", evt->data_len, (char*)evt->data);
-            device = cJSON_Parse((char*)evt->data);
-            device_id = cJSON_GetObjectItem(device,"id")->valueint;
-            save_id_to_nvs(device_id);
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            ESP_LOGI(SERVER_TAG, "HTTP FINISH");
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            ESP_LOGI(SERVER_TAG, "HTTP DISCONNECTED");
-            break;
-    }
-    return ESP_OK;
+  cJSON *device;
+  cJSON *state;
+  cJSON *color_object;
+  char* status;
+  long color;
+  int device_id;
+  switch(evt->event_id) {
+      case HTTP_EVENT_ERROR:
+          ESP_LOGI(SERVER_TAG, "HTTP ERROR");
+          break;
+      case HTTP_EVENT_ON_CONNECTED:
+          ESP_LOGI(SERVER_TAG, "HTTP CONNECTED");
+          break;
+      case HTTP_EVENT_HEADER_SENT:
+          break;
+      case HTTP_EVENT_ON_HEADER:
+          break;
+      case HTTP_EVENT_ON_DATA:
+          ESP_LOGI(SERVER_TAG, "Device registered : %.*s", evt->data_len, (char*)evt->data);
+          device = cJSON_Parse((char*)evt->data);
+          device_id = cJSON_GetObjectItem(device,"id")->valueint;
+          state = cJSON_GetObjectItem(device, "state");
+          status = cJSON_GetObjectItem(state, "toggle")->valuestring;
+          color_object = cJSON_GetObjectItem(state, "color");
+          color = cJSON_GetObjectItem(color_object, "argb")->valueint;
+
+          save_id_to_nvs(device_id);
+
+          handle_switch(status);
+          handle_color_changed(color);
+          cJSON_Delete(device);
+          break;
+      case HTTP_EVENT_ON_FINISH:
+          ESP_LOGI(SERVER_TAG, "HTTP FINISH");
+          break;
+      case HTTP_EVENT_DISCONNECTED:
+          ESP_LOGI(SERVER_TAG, "HTTP DISCONNECTED");
+          break;
+  }
+  return ESP_OK;
 }
 
 void perform_device_request() {

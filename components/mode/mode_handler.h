@@ -1,7 +1,13 @@
+#include "main.h"
+
+#if CONFIG_MODE_HANDLER
+
+#define PIN_MODE_1 CONFIG_MODE_PIN_1
+#define PIN_MODE_2 CONFIG_MODE_PIN_2
+
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "console_config.h"
-#include "main.h"
 
 
 #define DEBOUNCE_TIMEOUT 1000
@@ -21,3 +27,5 @@ void switchMode();
 
 void enterCommandLineMode();
 void quitCommandLineMode();
+
+#endif
