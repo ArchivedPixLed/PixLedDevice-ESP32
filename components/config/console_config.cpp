@@ -6,6 +6,7 @@
 #include "cmd_wifi.h"
 #include "cmd_mqtt.h"
 #include "cmd_server.h"
+#include "cmd_module.h"
 
 TaskHandle_t command_line_task_handler;
 
@@ -105,6 +106,7 @@ void initialize_console() {
   register_wifi();
   register_mqtt();
   register_server();
+  register_module();
 
   xTaskCreate(command_line_task, "command line", CONSOLE_STACK_SIZE, NULL, 10, &command_line_task_handler);
 }

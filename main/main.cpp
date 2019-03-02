@@ -8,14 +8,13 @@
 #if CONFIG_MODE_HANDLER
   #include "mode_handler.h"
 #endif
+#include "module_config.h"
 
 extern "C" {
   void app_main();
 }
 
-static WS2812 strip = WS2812((gpio_num_t) LED_PIN, NUM_LED, RMT_CHANNEL_0);
-static pixel_t last_color = { };
-static bool on;
+// static WS2812* strip;
 
 void blink_task(void *delay_ms)
 {
@@ -35,55 +34,8 @@ void blink_task(void *delay_ms)
     }
 }
 
-/**
- * Called on color received. Convert the string payload into a 4 bytes long that
- * and send it to the strip.
- * @param[in] payload_length Length of the MQTT message payload
- * @param[in] payload MQTT message payload
- */
-void handle_color_changed(long color) {
-    uint32_t int_color = color  & 0xffffffff;
-    last_color.red = (int_color >> 16) & 0xff;
-    last_color.green = (int_color >> 8) & 0xff;
-    last_color.blue = int_color & 0xff;
-    ESP_LOGI(MAIN_TAG, "Set color : %i, %i, %i", last_color.red, last_color.green, last_color.blue);
-    if (on) {
-      for (int i = 0; i < NUM_LED; i++) {
-        strip.setPixel(i, last_color);
-      }
-      strip.show();
-    }
-}
-
-void handle_switch(const char* switch_str) {
-    if (strcmp(switch_str, "ON") == 0) {
-      ESP_LOGI(MAIN_TAG, "Switch On");
-      on = true;
-      for (int i = 0; i < NUM_LED; i++) {
-        strip.setPixel(i, last_color);
-      }
-      strip.show();
-    }
-    else {
-      ESP_LOGI(MAIN_TAG, "Switch Off");
-      on = false;
-      for (int i = 0; i < NUM_LED; i++) {
-        strip.setPixel(i, 0, 0, 0);
-      }
-      strip.show();
-    }
-}
-
 void app_main()
 {
-  last_color.red = 10;
-  last_color.green = 10;
-  last_color.blue = 10;
-  for (int i = 0; i < NUM_LED; i++) {
-    strip.setPixel(i, last_color.red, last_color.green, last_color.blue);
-  }
-  strip.show();
-
   ESP_LOGI(MAIN_TAG, "Init nvs");
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -92,16 +44,8 @@ void app_main()
   }
   ESP_ERROR_CHECK(err);
 
-  if(!(strcmp(WIFI_SSID, "") == 0)) {
-    /* Save and check WiFi info */
-    save_wifi_info_to_nvs(WIFI_SSID, WIFI_PASS);
-
-    char* ssid;
-    char* password;
-    load_wifi_config_from_nvs(&ssid, &password);
-    ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", ssid, password);
-    free(ssid);
-    free(password);
+  if(NUM_LED > 0) {
+    save_led_number_to_nvs(NUM_LED);
   }
 
   if(!(strcmp(SERVER_URL, "") == 0)) {
@@ -121,12 +65,36 @@ void app_main()
     ESP_LOGI(MAIN_TAG, "MQTT URI written to nvs : %s", mqtt_uri);
     free(mqtt_uri);
   }
+
+  if(!(strcmp(WIFI_SSID, "") == 0)) {
+    /* Save and check WiFi info */
+    save_wifi_info_to_nvs(WIFI_SSID, WIFI_PASS);
+
+    char* ssid;
+    char* password;
+    load_wifi_config_from_nvs(&ssid, &password);
+    ESP_LOGI(MAIN_TAG, "Wifi info written to nvs. ssid : %s , pw: %s", ssid, password);
+    free(ssid);
+    free(password);
+  }
+
+  init_strip();
+
+  last_color.red = 10;
+  last_color.green = 10;
+  last_color.blue = 10;
+  for (int i = 0; i < num_led; i++) {
+    strip->setPixel(i, last_color.red, last_color.green, last_color.blue);
+  }
+  strip->show();
+
   #if CONFIG_MODE_HANDLER
     initialize_mode_handler();
     switchMode();
   #else
     launch_default_mode();
   #endif
+  ESP_LOGI(MAIN_TAG, "Boot setup ok");
 }
 
 void launch_default_mode() {

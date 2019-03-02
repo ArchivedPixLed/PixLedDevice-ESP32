@@ -14,12 +14,8 @@
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
-#include "WS2812.h"
-
 
 void blink_task(void *delay_ms);
-void handle_color_changed(long color);
-void handle_switch(const char* switch_str);
 
 void launch_default_mode();
 void quit_default_mode();

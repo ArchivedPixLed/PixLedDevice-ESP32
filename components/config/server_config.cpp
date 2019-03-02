@@ -1,9 +1,11 @@
 #include "server_config.h"
 #include "esp_log.h"
 #include "cJSON.h"
-#include "main.h"
+#include "module_config.h"
 
 #define SERVER_TAG "SERVER"
+
+static bool device_registered = false;
 
 void save_id_to_nvs(int8_t device_id) {
   // Init NVS connection
@@ -11,6 +13,7 @@ void save_id_to_nvs(int8_t device_id) {
   ESP_ERROR_CHECK(nvs_open("conf", NVS_READWRITE, &nvs_config_handle));
 
   // Save id
+  ESP_LOGI(SERVER_TAG, "Save id to nvs : %i", device_id);
   ESP_ERROR_CHECK(nvs_set_i8(nvs_config_handle, "device_id", device_id));
   ESP_ERROR_CHECK(nvs_commit(nvs_config_handle));
 
@@ -100,6 +103,7 @@ esp_err_t fetch_device_handler(esp_http_client_event_t *evt)
           break;
       case HTTP_EVENT_ON_DATA:
           ESP_LOGI(SERVER_TAG, "Device info received : %.*s", evt->data_len, (char*)evt->data);
+          device_registered = true;
           device = cJSON_Parse((char*)evt->data);
           state = cJSON_GetObjectItem(device, "state");
           status = cJSON_GetObjectItem(state, "toggle")->valuestring;
@@ -127,7 +131,7 @@ esp_err_t create_device_handler(esp_http_client_event_t *evt)
   cJSON *color_object;
   char* status;
   long color;
-  int device_id;
+  int8_t device_id;
   switch(evt->event_id) {
       case HTTP_EVENT_ERROR:
           ESP_LOGI(SERVER_TAG, "HTTP ERROR");
@@ -148,11 +152,13 @@ esp_err_t create_device_handler(esp_http_client_event_t *evt)
           color_object = cJSON_GetObjectItem(state, "color");
           color = cJSON_GetObjectItem(color_object, "argb")->valueint;
 
+          ESP_LOGI(SERVER_TAG, "device id : %i", device_id);
           save_id_to_nvs(device_id);
 
           handle_switch(status);
           handle_color_changed(color);
           cJSON_Delete(device);
+          device_registered = true;
           break;
       case HTTP_EVENT_ON_FINISH:
           ESP_LOGI(SERVER_TAG, "HTTP FINISH");
@@ -193,7 +199,7 @@ void perform_device_request() {
       sprintf(
         request_body,
         "{\"type\":\"strip\",\"length\":%i}",
-        NUM_LED
+        num_led
       );
       esp_http_client_set_post_field(client, request_body, 50);
     }
@@ -202,7 +208,7 @@ void perform_device_request() {
       ESP_LOGI(SERVER_TAG, "Status = %d, content_length = %d",
            esp_http_client_get_status_code(client),
            esp_http_client_get_content_length(client));
-      if (esp_http_client_get_content_length(client) == 0) {
+      if (!device_registered) {
         ESP_LOGI(SERVER_TAG, "It seems that device has been deleted. A new create request should be performed.");
         delete_id_from_nvs();
         perform_device_request();

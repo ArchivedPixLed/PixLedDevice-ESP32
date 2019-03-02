@@ -1,5 +1,5 @@
 #include "mqtt_config.h"
-#include "main.h"
+#include "module_config.h"
 
 static esp_mqtt_client_handle_t client;
 static bool client_initialized = false;
