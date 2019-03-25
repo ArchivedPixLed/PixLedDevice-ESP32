@@ -85,8 +85,15 @@ make flash
 ```
 to upload the code to your ESP32. You can then run `make monitor` to check useful logs and check that everything is ok. (You can also run directly `make flash monitor`)
 
+This how a successful log could look like :
+
+![SuccessLog](https://github.com/PixLed/PixLedDevice-ESP32/blob/master/docs/pictures/logs_example.png)
+
+To quit the *esp-idf monitor*, use the shortcut `Ctrl+]`.
+
 As extra information : 
-* Normally, the led strip color should switch to light white at boot, and power off once the module as successfully connected to the server.
+* Normally, the led strip should switch to white at boot, and power off once the module has successfully connected to the server. If the strip does not turn on, you should check your strip connections and power supply.
+
 * The built-in LED (or other, specified by `Blink GPIO`) should blink until the module is connected to your WiFi network.
 
 # You're done!
