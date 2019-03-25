@@ -29,7 +29,7 @@ static int handle_server(int argc, char** argv) {
     delete_id_from_nvs();
   }
   if (server_args.check->count > 0){
-    int8_t device_id;
+    int32_t device_id;
     if (load_id_from_nvs(&device_id)) {
       ESP_LOGI(SERVER_CMD_TAG, "Currently stored device id : %i", device_id);
     }

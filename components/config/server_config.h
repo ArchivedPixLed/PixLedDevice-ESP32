@@ -6,8 +6,8 @@
 #define FETCH_DEVICE_HANDLER fetch_device_handler
 #define CREATE_DEVICE_HANDLER create_device_handler
 
-void save_id_to_nvs(int8_t device_id);
-bool load_id_from_nvs(int8_t* device_id);
+void save_id_to_nvs(int32_t device_id);
+bool load_id_from_nvs(int32_t* device_id);
 void delete_id_from_nvs();
 void save_server_url_to_nvs(const char* url);
 bool load_server_url_from_nvs(char** url);

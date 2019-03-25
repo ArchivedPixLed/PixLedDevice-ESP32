@@ -178,7 +178,7 @@ void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_han
 {
   // Topics initialization
   ESP_LOGI(MQTT_TAG, "Init topics");
-  int8_t id;
+  int32_t id;
   load_id_from_nvs(&id);
   sprintf(device_id, "%i", id);
   sprintf(client_id, "light_%i", id);

@@ -7,27 +7,27 @@
 
 static bool device_registered = false;
 
-void save_id_to_nvs(int8_t device_id) {
+void save_id_to_nvs(int32_t device_id) {
   // Init NVS connection
   nvs_handle nvs_config_handle;
   ESP_ERROR_CHECK(nvs_open("conf", NVS_READWRITE, &nvs_config_handle));
 
   // Save id
   ESP_LOGI(SERVER_TAG, "Save id to nvs : %i", device_id);
-  ESP_ERROR_CHECK(nvs_set_i8(nvs_config_handle, "device_id", device_id));
+  ESP_ERROR_CHECK(nvs_set_i32(nvs_config_handle, "device_id", device_id));
   ESP_ERROR_CHECK(nvs_commit(nvs_config_handle));
 
   // Close NVS handler
   nvs_close(nvs_config_handle);
 }
 
-bool load_id_from_nvs(int8_t* device_id) {
+bool load_id_from_nvs(int32_t* device_id) {
   // Init nvs connection
   nvs_handle nvs_config_handle;
   ESP_ERROR_CHECK(nvs_open("conf", NVS_READONLY, &nvs_config_handle));
 
   // Load id
-  esp_err_t err = nvs_get_i8(nvs_config_handle, "device_id", device_id);
+  esp_err_t err = nvs_get_i32(nvs_config_handle, "device_id", device_id);
   bool found = true;
   if (err == ESP_ERR_NVS_NOT_FOUND) {
     found = false;
@@ -108,7 +108,7 @@ esp_err_t fetch_device_handler(esp_http_client_event_t *evt)
           state = cJSON_GetObjectItem(device, "state");
           status = cJSON_GetObjectItem(state, "toggle")->valuestring;
           color_object = cJSON_GetObjectItem(state, "color");
-          color = cJSON_GetObjectItem(color_object, "argb")->valueint;
+          color = (long) cJSON_GetObjectItem(color_object, "argb")->valuedouble;
 
           handle_switch(status);
           handle_color_changed(color);
@@ -131,7 +131,7 @@ esp_err_t create_device_handler(esp_http_client_event_t *evt)
   cJSON *color_object;
   char* status;
   long color;
-  int8_t device_id;
+  int32_t device_id;
   switch(evt->event_id) {
       case HTTP_EVENT_ERROR:
           ESP_LOGI(SERVER_TAG, "HTTP ERROR");
@@ -146,11 +146,11 @@ esp_err_t create_device_handler(esp_http_client_event_t *evt)
       case HTTP_EVENT_ON_DATA:
           ESP_LOGI(SERVER_TAG, "Device registered : %.*s", evt->data_len, (char*)evt->data);
           device = cJSON_Parse((char*)evt->data);
-          device_id = cJSON_GetObjectItem(device,"id")->valueint;
+          device_id = (int32_t) cJSON_GetObjectItem(device,"id")->valuedouble;
           state = cJSON_GetObjectItem(device, "state");
           status = cJSON_GetObjectItem(state, "toggle")->valuestring;
           color_object = cJSON_GetObjectItem(state, "color");
-          color = cJSON_GetObjectItem(color_object, "argb")->valueint;
+          color = (long) cJSON_GetObjectItem(color_object, "argb")->valuedouble;
 
           ESP_LOGI(SERVER_TAG, "device id : %i", device_id);
           save_id_to_nvs(device_id);
@@ -173,7 +173,7 @@ esp_err_t create_device_handler(esp_http_client_event_t *evt)
 void perform_device_request() {
   char* root_url;
   if (load_server_url_from_nvs(&root_url)) {
-    int8_t device_id;
+    int32_t device_id;
     esp_http_client_config_t http_client_config = { };
 
     bool post_body = false;
