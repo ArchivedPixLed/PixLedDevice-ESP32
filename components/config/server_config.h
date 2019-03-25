@@ -1,7 +1,8 @@
 #include "nvs_flash.h"
 #include "esp_http_client.h"
 
-#define SERVER_URL CONFIG_SERVER_URL
+#define SERVER_IP CONFIG_SERVER_IP
+#define SERVER_PORT CONFIG_SERVER_PORT
 #define FETCH_DEVICE_HANDLER fetch_device_handler
 #define CREATE_DEVICE_HANDLER create_device_handler
 

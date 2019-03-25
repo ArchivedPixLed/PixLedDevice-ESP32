@@ -88,7 +88,7 @@ bool look_for_server(char* ip, char* port) {
     retry++;
     if (retry < MAX_RETRY) {
       ESP_LOGI(MDNS_TAG, "No server found, retry.");
-      return look_for_mqtt_broker(ip, port);
+      return look_for_server(ip, port);
     }
     else {
       retry = 0;

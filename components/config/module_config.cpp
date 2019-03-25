@@ -73,13 +73,10 @@ void handle_switch(const char* switch_str) {
     }
     else {
       ESP_LOGI(MODULE_TAG, "Switch Off");
-      ESP_LOGI(MODULE_TAG, "Strip pointer : %p", strip);
-      ESP_LOGI(MODULE_TAG, "Pixel count : %i", num_led);
       on = false;
       for (int i = 0; i < num_led; i++) {
         strip->setPixel(i, 0, 0, 0);
       }
-      ESP_LOGI(MODULE_TAG, "Show");
       strip->show();
     }
 }

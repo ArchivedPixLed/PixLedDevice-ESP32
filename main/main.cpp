@@ -48,18 +48,22 @@ void app_main()
     save_led_number_to_nvs(NUM_LED);
   }
 
-  if(!(strcmp(SERVER_URL, "") == 0)) {
+  if(!(strcmp(SERVER_IP, "") == 0)) {
     /* Save and check MQTT info */
-    save_server_url_to_nvs(SERVER_URL);
+    char url[30];
+    sprintf(url, "http://%s:%s/", SERVER_IP, SERVER_PORT);
+    save_server_url_to_nvs(url);
     char* server_url;
     load_server_url_from_nvs(&server_url);
     ESP_LOGI(MAIN_TAG, "Server url written to nvs : %s", server_url);
     free(server_url);
   }
 
-  if(!(strcmp(MQTT_BROKER_URI, "") == 0)) {
+  if(!(strcmp(MQTT_BROKER_IP, "") == 0)) {
     /* Save and check MQTT info */
-    save_mqtt_uri_to_nvs(MQTT_BROKER_URI);
+    char uri[30];
+    sprintf(uri, "mqtt://%s:%s/", MQTT_BROKER_IP, MQTT_BROKER_PORT);
+    save_mqtt_uri_to_nvs(uri);
     char* mqtt_uri;
     load_mqtt_uri_from_nvs(&mqtt_uri);
     ESP_LOGI(MAIN_TAG, "MQTT URI written to nvs : %s", mqtt_uri);
@@ -130,7 +134,7 @@ void launch_default_mode() {
     found = look_for_server(server_ip, server_port);
     if (found) {
       char url[50];
-      sprintf(url, "http://%s:%s", server_ip, server_port);
+      sprintf(url, "http://%s:%s/", server_ip, server_port);
       ESP_LOGI(MAIN_TAG, "Saving server url %s", url);
       save_server_url_to_nvs(url);
     }

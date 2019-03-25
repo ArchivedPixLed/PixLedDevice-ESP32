@@ -6,7 +6,7 @@ config LED_PIN
     PIN used to connected the led strip data.
 
 config NUM_LED
-    int "Led Number"
+    int "Led Count"
   default 0
 	help
 		Number of LEDs associated to the module.
@@ -41,16 +41,26 @@ config WIFI_SSID
 config WIFI_PASS
     string "WiFi PASS"
 
-config SERVER_URL
-    string "Server url"
+config SERVER_IP
+    string "Server IP"
   help
-    URL of the HTTP server.
+    IP of the PixLedServer
 
-config MQTT_BROKER_URI
-    string "Broker uri"
+config SERVER_PORT
+    string "Server port"
   help
-    The URI of your TCP mqtt broker.
-    Check https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/mqtt.html#uri
-    to see how it should be specified.
+    Port of the PixLedServer
+  default "8080"
+
+config MQTT_BROKER_IP
+    string "MQTT Broker IP"
+  help
+    The IP of the device that host your mqtt broker.
+
+config MQTT_BROKER_PORT
+    string "MQTT Broker port"
+  help
+    Port of the mqtt broker.
+  default "1883"
 
 endmenu

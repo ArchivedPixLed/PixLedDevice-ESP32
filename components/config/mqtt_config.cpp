@@ -154,15 +154,6 @@ esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event)
             }
             switch_str[event->data_len] = '\0';
             handle_switch(switch_str);
-            // ESP_LOGI(MQTT_TAG, "subscribed_to_switch_topic : %s", context->subscribed_to_switch_topic ? "true" : "false");
-            // if(!context->subscribed_to_switch_topic) {
-            //   // subscribed_to_switch_topic was false, so this is the initialization message.
-            //   context->subscribed_to_switch_topic=true;
-            //
-            //   // Then, we connect to color_topic
-            //   ESP_LOGI(MQTT_TAG, "Subscribing to color topic...");
-            //   esp_mqtt_client_subscribe(client, color_topic, 1);
-            // }
           }
 
           else if (strcmp(topic_str, color_topic) == 0) {
@@ -175,12 +166,6 @@ esp_err_t main_mqtt_event_handler(esp_mqtt_event_handle_t event)
             long color = strtol(color_str, &ptr, 10);
 
             handle_color_changed(color);
-            // if(!context->subscribed_to_color_topic){
-            //   // subscribed_to_color_topic was false, so this is the initialization message.
-            //   context->subscribed_to_color_topic=true;
-            //   ESP_LOGI(MQTT_TAG, "Initialization complete!");
-            //   esp_mqtt_client_subscribe(client, check_topic, 1);
-            // }
           }
 
           break;
@@ -199,12 +184,6 @@ void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_han
   sprintf(client_id, "light_%i", id);
   sprintf(color_topic, "/devices/%i/state/color", id);
   sprintf(switch_topic, "/devices/%i/state/switch", id);
-
-  // Blink on board led
-  // uint32_t delay_ms = 300;
-  // TaskHandle_t blinkLedTaskHandler;
-  // xTaskCreate(&blink_task, "blink_connect_mqtt", configMINIMAL_STACK_SIZE, (void*)&delay_ms, 5, &blinkLedTaskHandler);
-  // vTaskDelay(2000 / portTICK_PERIOD_MS);
 
   ESP_LOGI(MQTT_TAG, "Connecting to broker... (%s)", broker_uri);
 
@@ -230,13 +209,6 @@ void mqtt_app_start(const char* broker_uri, mqtt_event_callback_t mqtt_event_han
   esp_mqtt_client_start(client);
   client_initialized = true;
 
-  // while (*(context.connected) == MQTT_STATUS_WAITING) {
-  //   ESP_LOGI(MQTT_TAG, "Hey: %i", *(context.connected));
-  //   printf(".");
-  //   vTaskDelay(500 / portTICK_PERIOD_MS);
-  // }
-  // vTaskDelete(blinkLedTaskHandler);
-  // gpio_set_level((gpio_num_t) BLINK_GPIO, 0);
   ESP_LOGI(MQTT_TAG, "Mqtt setup OK.");
 }
 
