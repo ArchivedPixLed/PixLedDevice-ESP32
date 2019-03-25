@@ -94,3 +94,6 @@ Now you can set up all the devices that you want to include in your installation
 
 # App and modules
 If not done yet, you can now install your ![PixLed Androïd app](https://github.com/PaulBreugnot/PixLedAndroid) and set up your ![PixLedServer](https://github.com/PaulBreugnot/PixLedServer) to control your devices! :sheep: :rainbow:
+
+# LICENSE
+This software and all the PixLed tools are released under the [GNU General Public License v3.0](https://github.com/PixLed/PixLedDevice-ESP32/blob/master/LICENSE).
